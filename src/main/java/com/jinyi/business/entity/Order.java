@@ -1,12 +1,15 @@
-package com.jinyi.odatademo.entity;
+package com.jinyi.business.entity;
 
-import com.jinyi.odatademo.annotation.ODataEntity;
-import com.jinyi.odatademo.annotation.ODataField;
+import com.jinyi.odata.annotation.ODataEntity;
+import com.jinyi.odata.annotation.ODataField;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 订单实体
+ */
 @Data
 @ODataEntity(name = "Orders", table = "orders")
 public class Order {

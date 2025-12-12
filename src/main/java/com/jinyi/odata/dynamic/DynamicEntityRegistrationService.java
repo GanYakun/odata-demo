@@ -1,6 +1,6 @@
-package com.jinyi.odatademo.service;
+package com.jinyi.odata.dynamic;
 
-import com.jinyi.odatademo.dto.EntityDefinition;
+import com.jinyi.odata.core.EntityRegistryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,6 +11,10 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 动态实体注册服务
+ * 负责动态实体的注册、管理和数据库表创建
+ */
 @Service
 @Slf4j
 public class DynamicEntityRegistrationService {
@@ -41,6 +45,13 @@ public class DynamicEntityRegistrationService {
      * 动态注册实体（可选择是否生成Java文件）
      */
     public String registerEntity(EntityDefinition entityDef, boolean generateJavaFile) {
+        return registerEntity(entityDef, generateJavaFile, null);
+    }
+
+    /**
+     * 动态注册实体（支持应用关联）
+     */
+    public String registerEntity(EntityDefinition entityDef, boolean generateJavaFile, Long applicationId) {
         try {
             validateEntityDefinition(entityDef);
             

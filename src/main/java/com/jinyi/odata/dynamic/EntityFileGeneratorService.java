@@ -1,23 +1,24 @@
-package com.jinyi.odatademo.service;
+package com.jinyi.odata.dynamic;
 
-import com.jinyi.odatademo.dto.EntityDefinition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * 实体文件生成服务
+ * 负责根据动态实体定义生成对应的Java实体类文件
+ */
 @Service
 @Slf4j
 public class EntityFileGeneratorService {
 
-    private static final String ENTITY_PACKAGE = "com.jinyi.odatademo.entity";
-    private static final String ENTITY_PATH = "src/main/java/com/jinyi/odatademo/entity/";
+    private static final String ENTITY_PACKAGE = "com.jinyi.business.entity";
+    private static final String ENTITY_PATH = "src/main/java/com/jinyi/business/entity/";
 
     /**
      * 根据实体定义生成 Java 实体类文件
@@ -102,8 +103,8 @@ public class EntityFileGeneratorService {
         Set<String> imports = new HashSet<>();
         
         // 基础导入
-        imports.add("com.jinyi.odatademo.annotation.ODataEntity");
-        imports.add("com.jinyi.odatademo.annotation.ODataField");
+        imports.add("com.jinyi.odata.annotation.ODataEntity");
+        imports.add("com.jinyi.odata.annotation.ODataField");
         imports.add("lombok.Data");
         
         // 根据字段类型添加导入

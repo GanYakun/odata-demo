@@ -1,9 +1,13 @@
-package com.jinyi.odatademo.dto;
+package com.jinyi.odata.dynamic;
 
 import lombok.Data;
 
 import java.util.List;
 
+/**
+ * 动态实体定义
+ * 用于定义动态创建的OData实体结构
+ */
 @Data
 public class EntityDefinition {
     private String entityName;
@@ -12,6 +16,9 @@ public class EntityDefinition {
     private boolean autoCreate = true;
     private List<FieldDefinition> fields;
     
+    /**
+     * 字段定义
+     */
     @Data
     public static class FieldDefinition {
         private String fieldName;

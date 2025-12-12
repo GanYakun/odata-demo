@@ -1,12 +1,15 @@
-package com.jinyi.odatademo.entity;
+package com.jinyi.business.entity;
 
-import com.jinyi.odatademo.annotation.ODataEntity;
-import com.jinyi.odatademo.annotation.ODataField;
+import com.jinyi.odata.annotation.ODataEntity;
+import com.jinyi.odata.annotation.ODataField;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 产品实体
+ */
 @Data
 @ODataEntity(name = "Products", table = "products")
 public class Product {

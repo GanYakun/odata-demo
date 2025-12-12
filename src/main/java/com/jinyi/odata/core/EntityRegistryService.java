@@ -1,7 +1,8 @@
-package com.jinyi.odatademo.service;
+package com.jinyi.odata.core;
 
-import com.jinyi.odatademo.annotation.ODataEntity;
-import com.jinyi.odatademo.annotation.ODataField;
+import com.jinyi.odata.annotation.ODataEntity;
+import com.jinyi.odata.annotation.ODataField;
+import com.jinyi.odata.dynamic.DynamicEntityRegistrationService;
 import lombok.extern.slf4j.Slf4j;
 import org.reflections.Reflections;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * OData实体注册服务
+ * 负责扫描和注册OData实体，管理实体与数据库表的映射关系
+ */
 @Service
 @Slf4j
 public class EntityRegistryService {
@@ -33,7 +37,8 @@ public class EntityRegistryService {
     public void scanAndRegisterEntities() {
         log.info("Starting OData entity scanning...");
         
-        Reflections reflections = new Reflections("com.jinyi.odatademo.entity");
+        // 扫描业务实体包
+        Reflections reflections = new Reflections("com.jinyi.business.entity");
         Set<Class<?>> entityClasses = reflections.getTypesAnnotatedWith(ODataEntity.class);
         
         for (Class<?> entityClass : entityClasses) {
@@ -53,9 +58,7 @@ public class EntityRegistryService {
         
         log.info("Registered entity: {} -> table: {}", entityName, tableName);
         
-        if (annotation.autoCreate()) {
-            createTableIfNotExists(entityClass, tableName);
-        }
+        createTableIfNotExists(entityClass, tableName);
     }
 
     private void createTableIfNotExists(Class<?> entityClass, String tableName) {
