@@ -3,6 +3,7 @@ package com.jinyi.odatademo.controller;
 import com.jinyi.odatademo.dto.EntityDefinition;
 import com.jinyi.odatademo.service.DynamicEntityRegistrationService;
 import com.jinyi.odatademo.service.EntityRegistryService;
+import com.jinyi.odatademo.service.EntityFileGeneratorService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,20 +25,31 @@ public class DynamicEntityController {
     @Autowired
     private EntityRegistryService entityRegistryService;
 
+    @Autowired
+    private EntityFileGeneratorService entityFileGeneratorService;
+
     /**
      * 注册新的动态实体
      */
     @PostMapping(value = "/register", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Map<String, Object>> registerEntity(@RequestBody EntityDefinition entityDef) {
+    public ResponseEntity<Map<String, Object>> registerEntity(
+            @RequestBody EntityDefinition entityDef,
+            @RequestParam(defaultValue = "true") boolean generateJavaFile) {
+        
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String result = dynamicEntityService.registerEntity(entityDef);
+            String result = dynamicEntityService.registerEntity(entityDef, generateJavaFile);
             
             response.put("success", true);
             response.put("message", result);
             response.put("entityName", entityDef.getEntityName());
             response.put("tableName", entityDef.getTableName());
+            response.put("javaFileGenerated", generateJavaFile);
+            
+            if (generateJavaFile) {
+                response.put("javaFilePath", entityFileGeneratorService.getEntityFilePath(entityDef.getEntityName()));
+            }
             
             log.info("Entity registered successfully: {}", entityDef.getEntityName());
             return ResponseEntity.ok(response);
@@ -113,17 +125,19 @@ public class DynamicEntityController {
     @DeleteMapping(value = "/{entityName}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> unregisterEntity(
             @PathVariable String entityName,
-            @RequestParam(defaultValue = "false") boolean dropTable) {
+            @RequestParam(defaultValue = "false") boolean dropTable,
+            @RequestParam(defaultValue = "true") boolean deleteJavaFile) {
         
         Map<String, Object> response = new HashMap<>();
         
         try {
-            String result = dynamicEntityService.unregisterEntity(entityName, dropTable);
+            String result = dynamicEntityService.unregisterEntity(entityName, dropTable, deleteJavaFile);
             
             response.put("success", true);
             response.put("message", result);
             response.put("entityName", entityName);
             response.put("tableDropped", dropTable);
+            response.put("javaFileDeleted", deleteJavaFile);
             
             log.info("Entity unregistered successfully: {}", entityName);
             return ResponseEntity.ok(response);
@@ -220,6 +234,130 @@ public class DynamicEntityController {
             response.put("message", e.getMessage());
             
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    /**
+     * 预览实体Java文件内容（不生成文件）
+     */
+    @PostMapping(value = "/preview", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> previewEntityFile(@RequestBody EntityDefinition entityDef) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String javaCode = entityFileGeneratorService.previewEntityFile(entityDef);
+            
+            response.put("success", true);
+            response.put("entityName", entityDef.getEntityName());
+            response.put("javaCode", javaCode);
+            response.put("filePath", entityFileGeneratorService.getEntityFilePath(entityDef.getEntityName()));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            
+            log.error("Failed to preview entity file: {}", entityDef.getEntityName(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    /**
+     * 为已注册的实体生成Java文件
+     */
+    @PostMapping(value = "/{entityName}/generate-file", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> generateEntityFile(@PathVariable String entityName) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            EntityDefinition entityDef = dynamicEntityService.getEntityDefinition(entityName);
+            
+            if (entityDef == null) {
+                response.put("success", false);
+                response.put("message", "Entity not found: " + entityName);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+            
+            // 检查文件是否已存在
+            boolean fileExists = entityFileGeneratorService.entityFileExists(entityName);
+            if (fileExists) {
+                response.put("success", false);
+                response.put("message", "Java file already exists for entity: " + entityName);
+                response.put("filePath", entityFileGeneratorService.getEntityFilePath(entityName));
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+            }
+            
+            String filePath = entityFileGeneratorService.generateEntityFile(entityDef);
+            
+            response.put("success", true);
+            response.put("message", "Java file generated successfully");
+            response.put("entityName", entityName);
+            response.put("filePath", filePath);
+            
+            log.info("Generated Java file for entity: {}", entityName);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            
+            log.error("Failed to generate Java file for entity: {}", entityName, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * 删除实体的Java文件
+     */
+    @DeleteMapping(value = "/{entityName}/file", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> deleteEntityFile(@PathVariable String entityName) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            boolean deleted = entityFileGeneratorService.deleteEntityFile(entityName);
+            
+            response.put("success", true);
+            response.put("message", deleted ? "Java file deleted successfully" : "Java file did not exist");
+            response.put("entityName", entityName);
+            response.put("fileDeleted", deleted);
+            
+            log.info("Deleted Java file for entity: {}", entityName);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            
+            log.error("Failed to delete Java file for entity: {}", entityName, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * 检查实体Java文件是否存在
+     */
+    @GetMapping(value = "/{entityName}/file-status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> checkEntityFileStatus(@PathVariable String entityName) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            boolean fileExists = entityFileGeneratorService.entityFileExists(entityName);
+            String filePath = entityFileGeneratorService.getEntityFilePath(entityName);
+            
+            response.put("success", true);
+            response.put("entityName", entityName);
+            response.put("fileExists", fileExists);
+            response.put("filePath", filePath);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            
+            log.error("Failed to check file status for entity: {}", entityName, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }

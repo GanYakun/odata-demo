@@ -21,6 +21,9 @@ public class DynamicEntityRegistrationService {
     @Autowired
     private EntityRegistryService entityRegistryService;
 
+    @Autowired
+    private EntityFileGeneratorService entityFileGeneratorService;
+
     // 存储动态注册的实体定义
     private final Map<String, EntityDefinition> dynamicEntities = new ConcurrentHashMap<>();
     
@@ -31,6 +34,13 @@ public class DynamicEntityRegistrationService {
      * 动态注册实体
      */
     public String registerEntity(EntityDefinition entityDef) {
+        return registerEntity(entityDef, true);
+    }
+
+    /**
+     * 动态注册实体（可选择是否生成Java文件）
+     */
+    public String registerEntity(EntityDefinition entityDef, boolean generateJavaFile) {
         try {
             validateEntityDefinition(entityDef);
             
@@ -47,6 +57,18 @@ public class DynamicEntityRegistrationService {
                 createDatabaseTable(entityDef);
             }
             
+            // 生成Java实体文件
+            String javaFilePath = null;
+            if (generateJavaFile) {
+                try {
+                    javaFilePath = entityFileGeneratorService.generateEntityFile(entityDef);
+                    log.info("Generated Java entity file: {}", javaFilePath);
+                } catch (Exception e) {
+                    log.warn("Failed to generate Java entity file for {}: {}", entityName, e.getMessage());
+                    // 不阻止实体注册，只记录警告
+                }
+            }
+            
             // 注册实体到内存
             dynamicEntities.put(entityName, entityDef);
             
@@ -60,8 +82,13 @@ public class DynamicEntityRegistrationService {
             // 注册到实体注册服务
             entityRegistryService.registerDynamicEntity(entityName, tableName, this);
             
+            String message = "Entity registered successfully: " + entityName;
+            if (javaFilePath != null) {
+                message += " (Java file generated: " + javaFilePath + ")";
+            }
+            
             log.info("Successfully registered dynamic entity: {} -> table: {}", entityName, tableName);
-            return "Entity registered successfully: " + entityName;
+            return message;
             
         } catch (Exception e) {
             log.error("Failed to register entity: {}", entityDef.getEntityName(), e);
@@ -95,6 +122,13 @@ public class DynamicEntityRegistrationService {
      * 删除动态实体
      */
     public String unregisterEntity(String entityName, boolean dropTable) {
+        return unregisterEntity(entityName, dropTable, true);
+    }
+
+    /**
+     * 删除动态实体（可选择是否删除Java文件）
+     */
+    public String unregisterEntity(String entityName, boolean dropTable, boolean deleteJavaFile) {
         try {
             EntityDefinition entityDef = dynamicEntities.get(entityName);
             if (entityDef == null) {
@@ -108,6 +142,20 @@ public class DynamicEntityRegistrationService {
                 log.info("Dropped table: {}", entityDef.getTableName());
             }
             
+            // 删除Java实体文件（如果需要）
+            boolean javaFileDeleted = false;
+            if (deleteJavaFile) {
+                try {
+                    javaFileDeleted = entityFileGeneratorService.deleteEntityFile(entityName);
+                    if (javaFileDeleted) {
+                        log.info("Deleted Java entity file for: {}", entityName);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to delete Java entity file for {}: {}", entityName, e.getMessage());
+                    // 不阻止实体删除，只记录警告
+                }
+            }
+            
             // 从内存中移除
             dynamicEntities.remove(entityName);
             entityFieldMappings.remove(entityName);
@@ -115,8 +163,16 @@ public class DynamicEntityRegistrationService {
             // 从实体注册服务中移除
             entityRegistryService.unregisterDynamicEntity(entityName);
             
+            String message = "Entity unregistered successfully: " + entityName;
+            if (dropTable) {
+                message += " (table dropped)";
+            }
+            if (deleteJavaFile && javaFileDeleted) {
+                message += " (Java file deleted)";
+            }
+            
             log.info("Successfully unregistered dynamic entity: {}", entityName);
-            return "Entity unregistered successfully: " + entityName;
+            return message;
             
         } catch (Exception e) {
             log.error("Failed to unregister entity: {}", entityName, e);
