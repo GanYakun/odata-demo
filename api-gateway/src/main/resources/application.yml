@@ -1,0 +1,77 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: api-gateway
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        import-check:
+          enabled: false
+      discovery:
+        enabled: true
+        server-addr: 127.0.0.1:8848
+        namespace: public
+    gateway:
+      discovery:
+        locator:
+          enabled: true  # 启用服务发现路由
+          lower-case-service-id: true
+      routes:
+        # OData服务路由 - 使用服务发现
+        - id: odata-route
+          uri: lb://odata-gateway
+          predicates:
+            - Path=/odata/**
+          filters:
+            - StripPrefix=1  # 移除/odata前缀
+        
+        # 平台配置服务路由 - 使用服务发现
+        - id: platform-config-route
+          uri: lb://platform-config-service
+          predicates:
+            - Path=/platform/**
+        
+        # 健康检查路由
+        - id: health-route
+          uri: lb://odata-gateway
+          predicates:
+            - Path=/actuator/**
+
+      # 全局CORS配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: false
+
+# 日志配置
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
+    reactor.netty: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{50}] - %msg%n"
+
+# 管理端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true

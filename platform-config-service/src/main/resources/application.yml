@@ -13,8 +13,8 @@ spring:
           enabled: false
       discovery:
         enabled: true
-        namespace: 3713ee30-83c9-4625-a734-3179c87179e8
         server-addr: 127.0.0.1:8848
+        namespace: public
   
   # 数据库配置 - 使用H2进行测试
   datasource:

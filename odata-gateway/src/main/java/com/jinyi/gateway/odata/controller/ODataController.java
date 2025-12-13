@@ -15,7 +15,7 @@ import java.util.*;
  * 基于应用代码提供OData服务，通过平台配置服务获取数据
  */
 @RestController
-@RequestMapping("/odata")
+@RequestMapping("")  // 移除/odata前缀，由API Gateway处理路由
 @Slf4j
 public class ODataController {
 

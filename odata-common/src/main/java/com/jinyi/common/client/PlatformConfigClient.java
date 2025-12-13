@@ -14,7 +14,7 @@ import java.util.Map;
  * 平台配置服务客户端
  * 用于Gateway调用平台配置服务
  */
-@FeignClient(name = "platform-config-service", url = "http://localhost:8081", path = "/platform")
+@FeignClient(name = "platform-config-service", path = "/platform")
 public interface PlatformConfigClient {
 
     /**
