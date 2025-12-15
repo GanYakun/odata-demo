@@ -50,6 +50,7 @@ public class DatabaseTableService {
         sql.append(") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='动态实体表-").append(tableName).append("'");
 
         try {
+            log.info("Executing SQL: {}", sql.toString());
             jdbcTemplate.execute(sql.toString());
             log.info("Table created successfully: {}", tableName);
         } catch (Exception e) {
@@ -141,8 +142,31 @@ public class DatabaseTableService {
             fieldDef.append(" NOT NULL");
         }
 
+        // 处理默认值
         if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()) {
-            fieldDef.append(" DEFAULT '").append(field.getDefaultValue()).append("'");
+            String defaultValue = field.getDefaultValue();
+            
+            // 对于BOOLEAN类型，需要特殊处理
+            if ("BOOLEAN".equalsIgnoreCase(dbType) || "TINYINT".equalsIgnoreCase(dbType)) {
+                // 将字符串形式的布尔值转换为数字
+                if ("true".equalsIgnoreCase(defaultValue) || "1".equals(defaultValue)) {
+                    fieldDef.append(" DEFAULT 1");
+                } else if ("false".equalsIgnoreCase(defaultValue) || "0".equals(defaultValue)) {
+                    fieldDef.append(" DEFAULT 0");
+                } else {
+                    // 如果不是标准的布尔值，默认为0
+                    fieldDef.append(" DEFAULT 0");
+                }
+            } else if ("INT".equalsIgnoreCase(dbType) || "BIGINT".equalsIgnoreCase(dbType)) {
+                // 数字类型不需要引号
+                fieldDef.append(" DEFAULT ").append(defaultValue);
+            } else if ("DECIMAL".equalsIgnoreCase(dbType)) {
+                // 小数类型不需要引号
+                fieldDef.append(" DEFAULT ").append(defaultValue);
+            } else {
+                // 字符串类型需要引号
+                fieldDef.append(" DEFAULT '").append(defaultValue).append("'");
+            }
         }
 
         if (field.getIsUnique() != null && field.getIsUnique()) {

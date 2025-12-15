@@ -1,8 +1,8 @@
 package com.jinyi.platform.controller;
 
-import com.jinyi.platform.service.ApplicationService;
 import com.jinyi.platform.service.DynamicEntityService;
 import com.jinyi.platform.service.QueryExecutionService;
+import com.jinyi.platform.service.ApplicationService;
 import com.jinyi.common.dto.ApiResponse;
 import com.jinyi.common.dto.EntityDefinition;
 import com.jinyi.common.entity.Application;
@@ -47,7 +47,6 @@ public class PlatformController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-
     /**
      * 获取所有应用
      */
@@ -126,7 +125,6 @@ public class PlatformController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
-
     /**
      * 获取应用下的所有实体
      */
@@ -152,149 +150,6 @@ public class PlatformController {
         } catch (Exception e) {
             log.error("Failed to get application entities by code: {}", appCode, e);
             return ResponseEntity.internalServerError().body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    /**
-     * 在指定应用中注册新的动态实体
-     */
-    @PostMapping("/applications/{appId}/dynamic-entities")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> registerDynamicEntity(
-            @PathVariable Long appId,
-            @RequestBody EntityDefinition entityDef) {
-        
-        try {
-            // 验证应用是否存在
-            if (!applicationService.existsById(appId)) {
-                return ResponseEntity.status(404).body(ApiResponse.error("Application not found: " + appId));
-            }
-
-            // 注册动态实体
-            String result = dynamicEntityService.registerEntity(entityDef, appId);
-            
-            // 将实体关联到应用
-            ApplicationEntity appEntity = applicationService.addEntityToApplication(
-                    appId, entityDef.getEntityName(), entityDef.getTableName(), 
-                    entityDef.getDescription(), true);
-            
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("applicationId", appId);
-            responseData.put("entityName", entityDef.getEntityName());
-            responseData.put("tableName", entityDef.getTableName());
-            responseData.put("applicationEntity", appEntity);
-            
-            log.info("Dynamic entity registered successfully in application {}: {}", appId, entityDef.getEntityName());
-            return ResponseEntity.ok(ApiResponse.success(result, responseData));
-            
-        } catch (Exception e) {
-            log.error("Failed to register dynamic entity in application {}: {}", appId, entityDef.getEntityName(), e);
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    /**
-     * 获取应用中的动态实体定义
-     */
-    @GetMapping("/applications/{appId}/dynamic-entities/{entityName}")
-    public ResponseEntity<ApiResponse<EntityDefinition>> getDynamicEntityDefinition(
-            @PathVariable Long appId,
-            @PathVariable String entityName) {
-        
-        try {
-            // 验证应用是否存在
-            if (!applicationService.existsById(appId)) {
-                return ResponseEntity.status(404).body(ApiResponse.error("Application not found: " + appId));
-            }
-
-            // 验证实体是否属于该应用
-            List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
-            boolean entityExists = appEntities.stream()
-                    .anyMatch(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic());
-            
-            if (!entityExists) {
-                return ResponseEntity.status(404).body(ApiResponse.error("Dynamic entity not found in application: " + entityName));
-            }
-
-            // 获取动态实体定义
-            EntityDefinition entityDef = dynamicEntityService.getEntityDefinition(entityName);
-            
-            if (entityDef == null) {
-                return ResponseEntity.status(404).body(ApiResponse.error("Entity definition not found: " + entityName));
-            }
-            
-            return ResponseEntity.ok(ApiResponse.success(entityDef));
-            
-        } catch (Exception e) {
-            log.error("Failed to get dynamic entity definition in application {}: {}", appId, entityName, e);
-            return ResponseEntity.internalServerError().body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    /**
-     * 检查动态实体是否存在
-     */
-    @GetMapping("/applications/{appId}/dynamic-entities/{entityName}/exists")
-    public ResponseEntity<ApiResponse<Boolean>> isDynamicEntityExists(@PathVariable Long appId, @PathVariable String entityName) {
-        try {
-            // 验证应用是否存在
-            if (!applicationService.existsById(appId)) {
-                return ResponseEntity.status(404).body(ApiResponse.error("Application not found: " + appId));
-            }
-
-            // 检查实体是否属于该应用且为动态实体
-            List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
-            boolean exists = appEntities.stream()
-                    .anyMatch(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic());
-            
-            return ResponseEntity.ok(ApiResponse.success(exists));
-            
-        } catch (Exception e) {
-            log.error("Failed to check dynamic entity existence in application {}: {}", appId, entityName, e);
-            return ResponseEntity.internalServerError().body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    /**
-     * 从应用中删除动态实体
-     */
-    @DeleteMapping("/applications/{appId}/dynamic-entities/{entityName}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> deleteDynamicEntity(
-            @PathVariable Long appId,
-            @PathVariable String entityName,
-            @RequestParam(defaultValue = "false") boolean dropTable) {
-        
-        try {
-            // 验证应用是否存在
-            if (!applicationService.existsById(appId)) {
-                return ResponseEntity.status(404).body(ApiResponse.error("Application not found: " + appId));
-            }
-
-            // 验证实体是否属于该应用且为动态实体
-            List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
-            boolean entityExists = appEntities.stream()
-                    .anyMatch(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic());
-            
-            if (!entityExists) {
-                return ResponseEntity.status(404).body(ApiResponse.error("Dynamic entity not found in application: " + entityName));
-            }
-
-            // 从动态实体服务中注销实体
-            String result = dynamicEntityService.unregisterEntity(entityName, dropTable);
-            
-            // 从应用中移除实体关联
-            applicationService.removeEntityFromApplication(appId, entityName);
-            
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("applicationId", appId);
-            responseData.put("entityName", entityName);
-            responseData.put("tableDropped", dropTable);
-            
-            log.info("Dynamic entity unregistered successfully from application {}: {}", appId, entityName);
-            return ResponseEntity.ok(ApiResponse.success(result, responseData));
-            
-        } catch (Exception e) {
-            log.error("Failed to unregister dynamic entity from application {}: {}", appId, entityName, e);
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 

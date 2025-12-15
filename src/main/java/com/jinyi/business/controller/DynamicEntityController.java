@@ -1,7 +1,7 @@
 package com.jinyi.business.controller;
 
 import com.jinyi.business.entity.ApplicationEntity;
-import com.jinyi.business.service.ApplicationService;
+import com.jinyi.platform.service.ApplicationService;
 import com.jinyi.odata.dynamic.EntityDefinition;
 import com.jinyi.odata.dynamic.DynamicEntityRegistrationService;
 import com.jinyi.odata.dynamic.EntityFileGeneratorService;
@@ -19,7 +19,7 @@ import java.util.Optional;
 
 /**
  * 基于应用的动态实体管理控制器
- * 所有实体操作都必须在应用上下文中完成
+ * 所有实体操作都必须在应用上下文中完�?
  */
 @RestController
 @RequestMapping("/api/applications/{appId}/dynamic-entities")
@@ -36,7 +36,7 @@ public class DynamicEntityController {
     private EntityFileGeneratorService entityFileGeneratorService;
 
     /**
-     * 在指定应用中注册新的动态实体
+     * 在指定应用中注册新的动态实�?
      */
     @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> registerEntityInApplication(
@@ -54,7 +54,7 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 注册动态实体
+            // 注册动态实�?
             String result = dynamicEntityService.registerEntity(entityDef, generateJavaFile, appId);
             
             // 将实体关联到应用
@@ -89,7 +89,7 @@ public class DynamicEntityController {
     }
 
     /**
-     * 获取应用中的动态实体定义
+     * 获取应用中的动态实体定�?
      */
     @GetMapping(value = "/{entityName}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> getEntityDefinitionInApplication(
@@ -106,7 +106,7 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 验证实体是否属于该应用
+            // 验证实体是否属于该应�?
             List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
             Optional<ApplicationEntity> appEntity = appEntities.stream()
                     .filter(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic())
@@ -118,7 +118,7 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 获取动态实体定义
+            // 获取动态实体定�?
             EntityDefinition entityDef = dynamicEntityService.getEntityDefinition(entityName);
             
             if (entityDef == null) {
@@ -144,7 +144,7 @@ public class DynamicEntityController {
     }
 
     /**
-     * 获取应用中的所有动态实体
+     * 获取应用中的所有动态实�?
      */
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> getAllDynamicEntitiesInApplication(@PathVariable Long appId) {
@@ -158,13 +158,13 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 获取应用下的所有动态实体
+            // 获取应用下的所有动态实�?
             List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
             List<ApplicationEntity> dynamicEntities = appEntities.stream()
                     .filter(ApplicationEntity::getIsDynamic)
                     .toList();
 
-            // 获取详细的实体定义
+            // 获取详细的实体定�?
             Map<String, Object> entitiesWithDefinitions = new HashMap<>();
             for (ApplicationEntity appEntity : dynamicEntities) {
                 EntityDefinition entityDef = dynamicEntityService.getEntityDefinition(appEntity.getEntityName());
@@ -191,7 +191,7 @@ public class DynamicEntityController {
     }
 
     /**
-     * 从应用中删除动态实体
+     * 从应用中删除动态实�?
      */
     @DeleteMapping(value = "/{entityName}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> unregisterEntityFromApplication(
@@ -210,7 +210,7 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 验证实体是否属于该应用且为动态实体
+            // 验证实体是否属于该应用且为动态实�?
             List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
             Optional<ApplicationEntity> appEntity = appEntities.stream()
                     .filter(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic())
@@ -250,7 +250,7 @@ public class DynamicEntityController {
     }
 
     /**
-     * 预览应用中的动态实体Java文件内容（不生成文件）
+     * 预览应用中的动态实体Java文件内容（不生成文件�?
      */
     @PostMapping(value = "/preview", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> previewEntityFileInApplication(
@@ -304,7 +304,7 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 验证实体是否属于该应用且为动态实体
+            // 验证实体是否属于该应用且为动态实�?
             List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
             Optional<ApplicationEntity> appEntity = appEntities.stream()
                     .filter(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic())
@@ -371,7 +371,7 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 验证实体是否属于该应用且为动态实体
+            // 验证实体是否属于该应用且为动态实�?
             List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
             Optional<ApplicationEntity> appEntity = appEntities.stream()
                     .filter(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic())
@@ -404,7 +404,7 @@ public class DynamicEntityController {
     }
 
     /**
-     * 检查应用中动态实体Java文件状态
+     * 检查应用中动态实体Java文件状�?
      */
     @GetMapping(value = "/{entityName}/file-status", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> checkEntityFileStatusInApplication(
@@ -421,7 +421,7 @@ public class DynamicEntityController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
-            // 验证实体是否属于该应用且为动态实体
+            // 验证实体是否属于该应用且为动态实�?
             List<ApplicationEntity> appEntities = applicationService.getApplicationEntities(appId);
             Optional<ApplicationEntity> appEntity = appEntities.stream()
                     .filter(ae -> ae.getEntityName().equals(entityName) && ae.getIsDynamic())

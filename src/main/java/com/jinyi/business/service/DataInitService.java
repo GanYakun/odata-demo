@@ -118,50 +118,8 @@ public class DataInitService implements ApplicationRunner {
             log.error("Failed to initialize project data: {}", e.getMessage());
         }
         
-        // 初始化应用实体关联
-        initApplicationEntityRelations();
+        // 应用实体关联已迁移到新系统，不再需要初始化
     }
 
-    private void initApplicationEntityRelations() {
-        try {
-            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM application_entities", Integer.class);
-            if (count != null && count > 0) {
-                log.info("Application entities table already has data, skipping initialization");
-                return;
-            }
 
-            // 获取应用ID
-            Long demoAppId = jdbcTemplate.queryForObject("SELECT id FROM applications WHERE app_code = 'DEMO'", Long.class);
-            Long erpAppId = jdbcTemplate.queryForObject("SELECT id FROM applications WHERE app_code = 'ERP'", Long.class);
-            Long crmAppId = jdbcTemplate.queryForObject("SELECT id FROM applications WHERE app_code = 'CRM'", Long.class);
-
-            String sql = """
-                INSERT INTO application_entities (application_id, entity_name, table_name, description, is_dynamic, active, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
-            LocalDateTime now = LocalDateTime.now();
-
-            // DEMO application entities
-            if (demoAppId != null) {
-                jdbcTemplate.update(sql, demoAppId, "Orders", "orders", "Order Management", false, true, now, now);
-                jdbcTemplate.update(sql, demoAppId, "Products", "products", "Product Management", false, true, now, now);
-            }
-
-            // ERP application entities
-            if (erpAppId != null) {
-                jdbcTemplate.update(sql, erpAppId, "Orders", "orders", "Order Management", false, true, now, now);
-                jdbcTemplate.update(sql, erpAppId, "Products", "products", "Product Management", false, true, now, now);
-                jdbcTemplate.update(sql, erpAppId, "Projects", "projects", "Project Management", false, true, now, now);
-            }
-
-            // CRM application entities
-            if (crmAppId != null) {
-                jdbcTemplate.update(sql, crmAppId, "Orders", "orders", "Customer Orders", false, true, now, now);
-            }
-
-            log.info("Initialized application entity relations");
-        } catch (Exception e) {
-            log.error("Failed to initialize application entity relations: {}", e.getMessage());
-        }
-    }
 }

@@ -10,16 +10,16 @@ if %errorlevel% neq 0 (
 )
 
 REM 检查Maven环境
-call mvn -version >nul 2>&1
+call mvnw.cmd -version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Maven is not installed or not in PATH. Please install Maven first.
+    echo ❌ Maven wrapper is not available. Please check mvnw.cmd file.
     pause
     exit /b 1
 )
 
 REM 构建项目
 echo 📦 Building projects...
-call mvn clean package -DskipTests
+call mvnw.cmd clean package -DskipTests
 
 if %errorlevel% neq 0 (
     echo ❌ Build failed. Please check the errors above.
@@ -42,7 +42,7 @@ timeout /t 30 /nobreak >nul
 REM 启动平台配置服务
 echo 🔧 Starting Platform Config Service...
 cd platform-config-service
-start "Platform Config Service" cmd /c "mvn spring-boot:run"
+start "Platform Config Service" cmd /c "mvnw.cmd spring-boot:run"
 cd ..
 
 REM 等待平台配置服务启动
@@ -52,7 +52,7 @@ timeout /t 20 /nobreak >nul
 REM 启动OData网关服务
 echo 🌐 Starting OData Gateway Service...
 cd odata-gateway
-start "OData Gateway Service" cmd /c "mvn spring-boot:run"
+start "OData Gateway Service" cmd /c "mvnw.cmd spring-boot:run"
 cd ..
 
 echo ⏳ Waiting for all services to start (30 seconds)...

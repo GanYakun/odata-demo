@@ -570,3 +570,94 @@ curl "http://localhost:8081/platform/entity-data/app/1/entity/PRODUCT/query?\$fi
 4. **JSON Field Support**: Full support for JSON-stored entity data
 5. **OData Compliance**: Follows OData v4 standard for query parameters
 6. **Gateway Integration**: Works seamlessly through microservices architecture
+
+## 🔧 BOOLEAN字段默认值修复 (2025-12-16)
+
+### 问题描述
+在创建包含BOOLEAN类型字段的实体时，会出现SQL语法错误：
+```
+Invalid default value for 'isActive'
+```
+
+错误的SQL语句：
+```sql
+isActive TINYINT(1) DEFAULT 'true'
+```
+
+### 问题原因
+在 `DatabaseTableService.buildFieldDefinition()` 方法中，所有类型的默认值都被包装在单引号中：
+```java
+fieldDef.append(" DEFAULT '").append(field.getDefaultValue()).append("'");
+```
+
+但是MySQL中TINYINT(1)类型期望数字值（0或1），而不是字符串值（'true'或'false'）。
+
+### 修复方案
+修改 `DatabaseTableService.buildFieldDefinition()` 方法，根据字段类型正确处理默认值：
+
+```java
+// 处理默认值
+if (field.getDefaultValue() != null && !field.getDefaultValue().isEmpty()) {
+    String defaultValue = field.getDefaultValue();
+    
+    // 对于BOOLEAN类型，需要特殊处理
+    if ("BOOLEAN".equalsIgnoreCase(dbType) || "TINYINT".equalsIgnoreCase(dbType)) {
+        // 将字符串形式的布尔值转换为数字
+        if ("true".equalsIgnoreCase(defaultValue) || "1".equals(defaultValue)) {
+            fieldDef.append(" DEFAULT 1");
+        } else if ("false".equalsIgnoreCase(defaultValue) || "0".equals(defaultValue)) {
+            fieldDef.append(" DEFAULT 0");
+        } else {
+            // 如果不是标准的布尔值，默认为0
+            fieldDef.append(" DEFAULT 0");
+        }
+    } else if ("INT".equalsIgnoreCase(dbType) || "BIGINT".equalsIgnoreCase(dbType)) {
+        // 数字类型不需要引号
+        fieldDef.append(" DEFAULT ").append(defaultValue);
+    } else if ("DECIMAL".equalsIgnoreCase(dbType)) {
+        // 小数类型不需要引号
+        fieldDef.append(" DEFAULT ").append(defaultValue);
+    } else {
+        // 字符串类型需要引号
+        fieldDef.append(" DEFAULT '").append(defaultValue).append("'");
+    }
+}
+```
+
+### 修复后的SQL语句
+正确的SQL语句：
+```sql
+isActive TINYINT(1) DEFAULT 1  -- 对于 defaultValue="true"
+isActive TINYINT(1) DEFAULT 0  -- 对于 defaultValue="false"
+count INT DEFAULT 10           -- 对于 defaultValue="10"
+rate DECIMAL(5,2) DEFAULT 0.50 -- 对于 defaultValue="0.50"
+category VARCHAR(50) DEFAULT 'default' -- 对于 defaultValue="default"
+```
+
+### 测试验证
+✅ **BOOLEAN字段测试**:
+- `defaultValue="true"` → `DEFAULT 1` ✅
+- `defaultValue="false"` → `DEFAULT 0` ✅
+
+✅ **INTEGER字段测试**:
+- `defaultValue="10"` → `DEFAULT 10` ✅
+
+✅ **DECIMAL字段测试**:
+- `defaultValue="0.50"` → `DEFAULT 0.50` ✅
+
+✅ **STRING字段测试**:
+- `defaultValue="default"` → `DEFAULT 'default'` ✅
+
+✅ **实体创建测试**:
+- 成功创建包含各种类型默认值的实体
+- 数据库表正确创建，无SQL语法错误
+- 实体数据正常存储和查询
+
+### 影响范围
+- 修复了所有BOOLEAN类型字段的默认值问题
+- 改进了INTEGER、DECIMAL类型字段的默认值处理
+- 保持了STRING类型字段默认值的正确处理
+- 向后兼容，不影响现有实体
+
+### 相关文件
+- `platform-config-service/src/main/java/com/jinyi/platform/service/DatabaseTableService.java`

@@ -29,17 +29,7 @@ public interface PlatformConfigClient {
     @GetMapping("/applications/code/{appCode}")
     ApiResponse<Application> getApplicationByCode(@PathVariable String appCode);
 
-    /**
-     * 获取应用下的所有实体
-     */
-    @GetMapping("/applications/{appId}/entities")
-    ApiResponse<List<ApplicationEntity>> getApplicationEntities(@PathVariable Long appId);
-
-    /**
-     * 根据应用代码获取应用下的所有实体
-     */
-    @GetMapping("/applications/code/{appCode}/entities")
-    ApiResponse<List<ApplicationEntity>> getApplicationEntitiesByCode(@PathVariable String appCode);
+    // 旧的应用实体接口已废弃，使用新的实体定义接口
 
     /**
      * 获取动态实体定义

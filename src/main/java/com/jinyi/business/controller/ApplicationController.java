@@ -2,7 +2,7 @@ package com.jinyi.business.controller;
 
 import com.jinyi.business.entity.Application;
 import com.jinyi.business.entity.ApplicationEntity;
-import com.jinyi.business.service.ApplicationService;
+import com.jinyi.platform.service.ApplicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

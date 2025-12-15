@@ -3,6 +3,7 @@ package com.jinyi.gateway.odata.service;
 import com.jinyi.common.client.PlatformConfigClient;
 import com.jinyi.common.dto.ApiResponse;
 import com.jinyi.common.dto.EntityDefinition;
+import com.jinyi.common.dto.EntityDefinitionDto;
 import com.jinyi.common.entity.Application;
 import com.jinyi.common.entity.ApplicationEntity;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * OData服务 - 网关版本
@@ -38,18 +40,48 @@ public class ODataService {
     }
 
     /**
-     * 获取应用下的所有实体
+     * 获取应用下的所有实体（使用新的实体定义系统）
      */
     public List<ApplicationEntity> getApplicationEntities(String appCode) {
         try {
-            ApiResponse<List<ApplicationEntity>> response = platformConfigClient.getApplicationEntitiesByCode(appCode);
+            // 先获取应用信息
+            Application app = getApplication(appCode);
+            if (app == null) {
+                log.warn("Application not found: {}", appCode);
+                return Collections.emptyList();
+            }
+
+            // 使用新的实体定义接口
+            ApiResponse<List<EntityDefinitionDto>> response = platformConfigClient.getEntityDefinitionsByAppId(app.getId());
             if (response.isSuccess() && response.getData() != null) {
-                return response.getData();
+                // 转换为ApplicationEntity格式
+                return response.getData().stream()
+                        .map(this::convertToApplicationEntity)
+                        .collect(Collectors.toList());
+            } else {
+                log.error("Failed to get entity definitions: {}", response.getMessage());
             }
         } catch (Exception e) {
             log.error("Failed to get application entities: {}", appCode, e);
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * 将EntityDefinitionDto转换为ApplicationEntity
+     */
+    private ApplicationEntity convertToApplicationEntity(EntityDefinitionDto entityDef) {
+        ApplicationEntity appEntity = new ApplicationEntity();
+        appEntity.setId(entityDef.getId());
+        appEntity.setApplicationId(entityDef.getAppId());
+        appEntity.setEntityName(entityDef.getEntityName());
+        appEntity.setTableName(entityDef.getTableName());
+        appEntity.setDescription(entityDef.getDescription());
+        appEntity.setIsDynamic("DYNAMIC".equals(entityDef.getEntityType()));
+        appEntity.setActive("ACTIVE".equals(entityDef.getStatus()));
+        appEntity.setCreatedAt(entityDef.getCreatedAt());
+        appEntity.setUpdatedAt(entityDef.getUpdatedAt());
+        return appEntity;
     }
 
     /**
