@@ -153,4 +153,128 @@ public class ODataService {
         result.put("message", "Operation completed");
         return result;
     }
+
+    // ========== 新实体系统方法 ==========
+
+    /**
+     * 查询新实体系统数据
+     */
+    public Map<String, Object> queryNewEntityData(Long appId, String entityName, Map<String, String> queryParams) {
+        try {
+            // 先获取实体定义以获取正确的实体编码
+            com.jinyi.common.dto.EntityDefinitionDto entityDef = getNewEntityDefinition(appId, entityName);
+            if (entityDef == null) {
+                log.warn("Entity definition not found for entity: {} in app: {}", entityName, appId);
+                Map<String, Object> result = new HashMap<>();
+                result.put("@odata.context", "$metadata#" + entityName);
+                result.put("value", Collections.emptyList());
+                return result;
+            }
+
+            // 使用实体编码查询数据
+            ApiResponse<Map<String, Object>> response = platformConfigClient.queryEntityData(appId, entityDef.getEntityCode(), queryParams);
+            if (response.isSuccess() && response.getData() != null) {
+                return response.getData();
+            }
+        } catch (Exception e) {
+            log.error("Failed to query new entity data for entity: {} in app: {}", entityName, appId, e);
+        }
+        
+        // 返回默认响应
+        Map<String, Object> result = new HashMap<>();
+        result.put("@odata.context", "$metadata#" + entityName);
+        result.put("value", Collections.emptyList());
+        return result;
+    }
+
+    /**
+     * 创建新实体系统数据
+     */
+    public Map<String, Object> createNewEntityData(Long appId, String entityName, Map<String, Object> data) {
+        try {
+            // 先获取实体定义以获取正确的实体编码
+            com.jinyi.common.dto.EntityDefinitionDto entityDef = getNewEntityDefinition(appId, entityName);
+            if (entityDef == null) {
+                throw new RuntimeException("Entity definition not found: " + entityName);
+            }
+
+            // 使用实体编码创建数据
+            ApiResponse<com.jinyi.common.dto.EntityDataDto> response = platformConfigClient.createEntityData(appId, entityDef.getEntityCode(), data);
+            if (response.isSuccess() && response.getData() != null) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("@odata.context", "$metadata#" + entityName + "/$entity");
+                result.put("id", response.getData().getRecordId());
+                result.putAll(response.getData().getData());
+                return result;
+            }
+        } catch (Exception e) {
+            log.error("Failed to create new entity data for entity: {} in app: {}", entityName, appId, e);
+        }
+        
+        throw new RuntimeException("Failed to create entity data");
+    }
+
+    /**
+     * 更新新实体系统数据
+     */
+    public Map<String, Object> updateNewEntityData(Long entityId, String recordId, Map<String, Object> data) {
+        try {
+            ApiResponse<com.jinyi.common.dto.EntityDataDto> response = platformConfigClient.updateEntityDataByRecordId(entityId, recordId, data);
+            if (response.isSuccess() && response.getData() != null) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("id", response.getData().getRecordId());
+                result.putAll(response.getData().getData());
+                return result;
+            }
+        } catch (Exception e) {
+            log.error("Failed to update new entity data for record: {} in entity: {}", recordId, entityId, e);
+        }
+        
+        throw new RuntimeException("Failed to update entity data");
+    }
+
+    /**
+     * 删除新实体系统数据
+     */
+    public void deleteNewEntityData(Long entityId, String recordId) {
+        try {
+            ApiResponse<Void> response = platformConfigClient.deleteEntityDataByRecordId(entityId, recordId);
+            if (!response.isSuccess()) {
+                throw new RuntimeException("Failed to delete entity data: " + response.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Failed to delete new entity data for record: {} in entity: {}", recordId, entityId, e);
+            throw new RuntimeException("Failed to delete entity data");
+        }
+    }
+
+    /**
+     * 获取新实体系统的实体定义
+     */
+    public com.jinyi.common.dto.EntityDefinitionDto getNewEntityDefinition(Long appId, String entityName) {
+        try {
+            ApiResponse<com.jinyi.common.dto.EntityDefinitionDto> response = platformConfigClient.getEntityDefinitionByName(appId, entityName);
+            if (response.isSuccess() && response.getData() != null) {
+                return response.getData();
+            }
+        } catch (Exception e) {
+            log.error("Failed to get new entity definition for entity: {} in app: {}", entityName, appId, e);
+        }
+        return null;
+    }
+
+    /**
+     * 获取应用下的所有新实体定义
+     */
+    public List<com.jinyi.common.dto.EntityDefinitionDto> getNewEntityDefinitions(Long appId) {
+        try {
+            ApiResponse<List<com.jinyi.common.dto.EntityDefinitionDto>> response = platformConfigClient.getEntityDefinitionsByAppId(appId);
+            if (response.isSuccess() && response.getData() != null) {
+                return response.getData();
+            }
+        } catch (Exception e) {
+            log.error("Failed to get new entity definitions for app: {}", appId, e);
+        }
+        return Collections.emptyList();
+    }
 }

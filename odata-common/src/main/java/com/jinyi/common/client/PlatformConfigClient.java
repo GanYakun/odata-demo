@@ -77,4 +77,42 @@ public interface PlatformConfigClient {
      */
     @PostMapping("/query/update")
     ApiResponse<Map<String, Object>> executeUpdate(@RequestBody Map<String, Object> updateRequest);
+
+    // ========== 新实体系统接口 ==========
+
+    /**
+     * 根据应用ID获取所有实体定义
+     */
+    @GetMapping("/entity-definitions/app/{appId}")
+    ApiResponse<List<com.jinyi.common.dto.EntityDefinitionDto>> getEntityDefinitionsByAppId(@PathVariable Long appId);
+
+    /**
+     * 根据应用ID和实体名称获取实体定义
+     */
+    @GetMapping("/entity-definitions/app/{appId}/name/{entityName}")
+    ApiResponse<com.jinyi.common.dto.EntityDefinitionDto> getEntityDefinitionByName(@PathVariable Long appId, @PathVariable String entityName);
+
+    /**
+     * 查询实体数据（支持OData查询参数）
+     */
+    @GetMapping("/entity-data/app/{appId}/entity/{entityCode}/query")
+    ApiResponse<Map<String, Object>> queryEntityData(@PathVariable Long appId, @PathVariable String entityCode, @RequestParam Map<String, String> queryParams);
+
+    /**
+     * 创建实体数据
+     */
+    @PostMapping("/entity-data/app/{appId}/entity/{entityCode}")
+    ApiResponse<com.jinyi.common.dto.EntityDataDto> createEntityData(@PathVariable Long appId, @PathVariable String entityCode, @RequestBody Map<String, Object> data);
+
+    /**
+     * 根据记录ID更新实体数据
+     */
+    @PutMapping("/entity-data/entity/{entityId}/record/{recordId}")
+    ApiResponse<com.jinyi.common.dto.EntityDataDto> updateEntityDataByRecordId(@PathVariable Long entityId, @PathVariable String recordId, @RequestBody Map<String, Object> data);
+
+    /**
+     * 根据记录ID删除实体数据
+     */
+    @DeleteMapping("/entity-data/entity/{entityId}/record/{recordId}")
+    ApiResponse<Void> deleteEntityDataByRecordId(@PathVariable Long entityId, @PathVariable String recordId);
 }

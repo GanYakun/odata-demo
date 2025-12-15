@@ -33,19 +33,20 @@ public class ODataController {
                 return ResponseEntity.notFound().build();
             }
 
-            List<ApplicationEntity> entities = odataService.getApplicationEntities(appCode);
+            // 使用新实体系统获取实体列表
+            List<com.jinyi.common.dto.EntityDefinitionDto> entities = odataService.getNewEntityDefinitions(app.getId());
             
             Map<String, Object> serviceDoc = new HashMap<>();
             serviceDoc.put("@odata.application", appCode);
             serviceDoc.put("@odata.context", "$metadata");
             
             List<Map<String, Object>> entitySets = new ArrayList<>();
-            for (ApplicationEntity entity : entities) {
-                if (entity.getActive()) {
+            for (com.jinyi.common.dto.EntityDefinitionDto entity : entities) {
+                if ("ACTIVE".equals(entity.getStatus())) {
                     Map<String, Object> entitySet = new HashMap<>();
                     entitySet.put("kind", "EntitySet");
                     entitySet.put("name", entity.getEntityName());
-                    entitySet.put("title", entity.getDescription() != null ? entity.getDescription() : entity.getEntityName());
+                    entitySet.put("title", entity.getDisplayName() != null ? entity.getDisplayName() : entity.getEntityName());
                     entitySet.put("url", entity.getEntityName());
                     entitySets.add(entitySet);
                 }
@@ -53,7 +54,7 @@ public class ODataController {
             
             serviceDoc.put("value", entitySets);
             
-            log.info("Generated service document for application: {}", appCode);
+            log.info("Generated service document for application: {} with {} entities", appCode, entitySets.size());
             return ResponseEntity.ok(serviceDoc);
             
         } catch (Exception e) {
@@ -77,23 +78,8 @@ public class ODataController {
                 return ResponseEntity.notFound().build();
             }
 
-            // 验证实体是否存在于应用中
-            List<ApplicationEntity> entities = odataService.getApplicationEntities(appCode);
-            boolean entityExists = entities.stream()
-                    .anyMatch(e -> e.getEntityName().equals(entityName) && e.getActive());
-            
-            if (!entityExists) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // 获取表名
-            String tableName = odataService.getTableName(appCode, entityName);
-            if (tableName == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // 执行查询
-            Map<String, Object> result = odataService.executeQuery(appCode, entityName, tableName, queryParams);
+            // 使用新的实体系统查询数据
+            Map<String, Object> result = odataService.queryNewEntityData(app.getId(), entityName, queryParams);
             
             log.info("Executed OData query for {}:{}", appCode, entityName);
             return ResponseEntity.ok(result);
@@ -179,23 +165,14 @@ public class ODataController {
                 return ResponseEntity.notFound().build();
             }
 
-            // 验证实体是否存在于应用中
-            List<ApplicationEntity> entities = odataService.getApplicationEntities(appCode);
-            boolean entityExists = entities.stream()
-                    .anyMatch(e -> e.getEntityName().equals(entityName) && e.getActive());
-            
-            if (!entityExists) {
+            // 验证实体是否存在于新实体系统中
+            com.jinyi.common.dto.EntityDefinitionDto entityDef = odataService.getNewEntityDefinition(app.getId(), entityName);
+            if (entityDef == null) {
                 return ResponseEntity.notFound().build();
             }
 
-            // 获取表名
-            String tableName = odataService.getTableName(appCode, entityName);
-            if (tableName == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // 执行创建操作
-            Map<String, Object> result = odataService.executeUpdate(appCode, entityName, tableName, "CREATE", entityData);
+            // 使用新实体系统创建数据
+            Map<String, Object> result = odataService.createNewEntityData(app.getId(), entityName, entityData);
             
             log.info("Created entity in {}:{}", appCode, entityName);
             return ResponseEntity.ok(result);
