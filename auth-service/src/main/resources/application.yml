@@ -1,0 +1,119 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: auth-service
+  
+  profiles:
+    active: dev
+  
+  # Database Configuration
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/odata_auth?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      auto-commit: true
+      idle-timeout: 30000
+      pool-name: AuthHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  
+  # Nacos Configuration
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+        metadata:
+          version: 1.0.0
+          service-type: auth
+
+# MyBatis Plus Configuration
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# JWT Configuration
+jwt:
+  secret: odata-auth-secret-key-2024-very-long-and-secure-key-for-jwt-token-generation
+  expiration: 86400000  # 24 hours (milliseconds)
+  refresh-expiration: 604800000  # 7 days (milliseconds)
+
+# OAuth2 Configuration
+oauth2:
+  client:
+    client-id: odata-client
+    client-secret: odata-secret
+    redirect-uri: http://localhost:8080/login/oauth2/code/odata
+    scope: read,write
+    authorized-grant-types: authorization_code,refresh_token,password,client_credentials
+
+# Logging Configuration
+logging:
+  level:
+    com.jinyi.auth: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+# Development Environment
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:auth_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+---
+# Production Environment
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  
+logging:
+  level:
+    com.jinyi.auth: INFO
+    org.springframework.security: WARN

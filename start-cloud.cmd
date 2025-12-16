@@ -49,6 +49,16 @@ REM 等待平台配置服务启动
 echo ⏳ Waiting for Platform Config Service to start (20 seconds)...
 timeout /t 20 /nobreak >nul
 
+REM 启动认证服务
+echo 🔐 Starting Authentication Service...
+cd auth-service
+start "Authentication Service" cmd /c "mvnw.cmd spring-boot:run"
+cd ..
+
+REM 等待认证服务启动
+echo ⏳ Waiting for Authentication Service to start (20 seconds)...
+timeout /t 20 /nobreak >nul
+
 REM 启动OData网关服务
 echo 🌐 Starting OData Gateway Service...
 cd odata-gateway
@@ -63,10 +73,14 @@ echo 🎉 OData Cloud Platform started successfully!
 echo.
 echo 📋 Service URLs:
 echo    Nacos Console: http://localhost:8848/nacos (nacos/nacos)
+echo    Authentication Service: http://localhost:8082/auth
 echo    Platform Config Service: http://localhost:8081/platform
 echo    OData Gateway Service: http://localhost:8080/odata
 echo.
 echo 🧪 Test Commands:
+echo    # Login (admin/admin123)
+echo    curl -X POST http://localhost:8082/auth/login -H "Content-Type: application/json" -d "{\"username\":\"admin\",\"password\":\"admin123\"}"
+echo.
 echo    # Get applications
 echo    curl http://localhost:8081/platform/applications
 echo.

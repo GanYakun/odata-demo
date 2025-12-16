@@ -17,6 +17,7 @@
         <module>api-gateway</module>
         <module>odata-gateway</module>
         <module>platform-config-service</module>
+        <module>auth-service</module>
     </modules>
 
     <parent>
@@ -33,6 +34,7 @@
         <java.version>17</java.version>
         <olingo.version>4.10.0</olingo.version>
         <nacos.version>2021.0.5.0</nacos.version>
+        <mybatis-plus.version>3.5.3.1</mybatis-plus.version>
     </properties>
 
     <dependencyManagement>
@@ -60,6 +62,13 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
+            </dependency>
+
+            <!-- MyBatis Plus -->
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
             </dependency>
 
             <!-- Common Module -->
