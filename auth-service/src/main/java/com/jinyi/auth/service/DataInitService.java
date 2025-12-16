@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class DataInitService /* implements CommandLineRunner */ {
+public class DataInitService implements CommandLineRunner {
     
     @Autowired
     private UserMapper userMapper;
@@ -40,7 +40,7 @@ public class DataInitService /* implements CommandLineRunner */ {
     @Autowired
     private PasswordUtil passwordUtil;
     
-    // @Override
+    @Override
     @Transactional
     public void run(String... args) throws Exception {
         try {
@@ -67,8 +67,7 @@ public class DataInitService /* implements CommandLineRunner */ {
      * Initialize permissions
      */
     private void initPermissions() {
-        try {
-            log.info("Initializing permissions...");
+        log.info("Initializing permissions...");
             
             List<PermissionData> permissions = Arrays.asList(
             // User management permissions
@@ -134,10 +133,6 @@ public class DataInitService /* implements CommandLineRunner */ {
                 permissionMapper.insert(permission);
                 log.info("Created permission: {}", permData.code);
             }
-        }
-        } catch (Exception e) {
-            log.error("Failed to initialize permissions: {}", e.getMessage());
-            throw e;
         }
     }
     
