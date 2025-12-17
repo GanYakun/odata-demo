@@ -74,6 +74,16 @@ REM 等待认证服务启动
 echo ⏳ Waiting for Authentication Service to start (20 seconds)...
 timeout /t 20 /nobreak >nul
 
+REM 启动API网关服务
+echo 🚪 Starting API Gateway Service...
+cd api-gateway
+start "API Gateway Service" cmd /c "mvnw.cmd spring-boot:run"
+cd ..
+
+REM 等待API网关启动
+echo ⏳ Waiting for API Gateway to start (20 seconds)...
+timeout /t 20 /nobreak >nul
+
 REM 启动OData网关服务
 echo 🌐 Starting OData Gateway Service...
 cd odata-gateway
@@ -88,22 +98,26 @@ echo 🎉 OData Cloud Platform started successfully with MySQL!
 echo.
 echo 📋 Service URLs:
 echo    Nacos Console: http://localhost:8848/nacos (nacos/nacos)
-echo    Authentication Service: http://localhost:8082/auth
-echo    Platform Config Service: http://localhost:8081/platform
-echo    OData Gateway Service: http://localhost:8080/odata
+echo    API Gateway: http://localhost:9000 (Main Entry Point)
+echo    Authentication Service: http://localhost:8082/auth (Direct)
+echo    Platform Config Service: http://localhost:8081/platform (Direct)
+echo    OData Gateway Service: http://localhost:8080/odata (Direct)
 echo.
-echo 🧪 Test Commands:
+echo 🧪 Test Commands (via API Gateway):
+echo    # Gateway health check
+echo    curl http://localhost:9000/gateway/health
+echo.
 echo    # Login (admin/admin123)
-echo    curl -X POST http://localhost:8082/auth/login -H "Content-Type: application/json" -d "{\"username\":\"admin\",\"password\":\"admin123\"}"
+echo    curl -X POST http://localhost:9000/auth/login -H "Content-Type: application/json" -d "{\"username\":\"admin\",\"password\":\"admin123\"}"
 echo.
-echo    # Get applications
-echo    curl http://localhost:8081/platform/applications
+echo    # Get applications (requires authentication)
+echo    curl -H "Authorization: Bearer {token}" http://localhost:9000/platform/applications
 echo.
-echo    # Get DEMO service document
-echo    curl http://localhost:8080/odata/DEMO
+echo    # Get DEMO service document (requires authentication)
+echo    curl -H "Authorization: Bearer {token}" http://localhost:9000/odata/DEMO
 echo.
-echo    # Query products in DEMO app
-echo    curl http://localhost:8080/odata/DEMO/Products
+echo    # Query products in DEMO app (requires authentication)
+echo    curl -H "Authorization: Bearer {token}" http://localhost:9000/odata/DEMO/Products
 echo.
 echo 📊 Database Information:
 echo    MySQL Host: localhost:3306

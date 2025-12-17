@@ -18,49 +18,21 @@ spring:
     gateway:
       discovery:
         locator:
-          enabled: true  # 启用服务发现路由
+          enabled: false  # 禁用自动路由，使用自定义路由配置
           lower-case-service-id: true
-      routes:
-        # OData服务路由 - 使用服务发现
-        - id: odata-route
-          uri: lb://odata-gateway
-          predicates:
-            - Path=/odata/**
-          filters:
-            - StripPrefix=1  # 移除/odata前缀
-        
-        # 平台配置服务路由 - 使用服务发现
-        - id: platform-config-route
-          uri: lb://platform-config-service
-          predicates:
-            - Path=/platform/**
-        
-        # 健康检查路由
-        - id: health-route
-          uri: lb://odata-gateway
-          predicates:
-            - Path=/actuator/**
+      # 移除静态路由配置，使用Java配置
 
-      # 全局CORS配置
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: false
+# JWT Configuration
+jwt:
+  secret: odata-auth-secret-key-2024-very-long-and-secure-key-for-jwt-token-generation
 
 # 日志配置
 logging:
   level:
+    com.jinyi.gateway: DEBUG
     org.springframework.cloud.gateway: DEBUG
     org.springframework.web.reactive: DEBUG
-    reactor.netty: DEBUG
+    reactor.netty: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{50}] - %msg%n"
 
